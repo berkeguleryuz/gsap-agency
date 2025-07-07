@@ -1,0 +1,190 @@
+"use client";
+/* eslint-disable @next/next/no-img-element */
+import AnimatedHeader from "@/components/AnimatedHeader";
+import { projects } from "@/constants";
+import { useGSAP } from "@gsap/react";
+import { Icon } from "@iconify/react";
+import gsap from "gsap";
+import ScrollTrigger from "gsap/all";
+import React, { useRef, useState } from "react";
+
+gsap.registerPlugin(ScrollTrigger);
+
+const WorksSection = () => {
+  const previewRef = useRef<HTMLDivElement>(null);
+  const overlayRefs = useRef<HTMLDivElement[]>([]);
+  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
+  const text = `Logic meets Quality at every step
+  with visionary approach
+  in the field of software development`;
+
+  const mouse = useRef({ x: 0, y: 0 });
+
+  const moveX = useRef<gsap.QuickToFunc | null>(null);
+  const moveY = useRef<gsap.QuickToFunc | null>(null);
+
+  useGSAP(() => {
+    moveX.current = gsap.quickTo(previewRef.current, "x", {
+      duration: 1.5,
+      ease: "power3.out",
+    });
+
+    moveY.current = gsap.quickTo(previewRef.current, "y", {
+      duration: 2,
+      ease: "power3.out",
+    });
+
+    gsap.from("#project", {
+      y: 100,
+      opacity: 0,
+      delay: 0.5,
+      duration: 1,
+      stagger: 0.3,
+      ease: "back.out",
+      scrollTrigger: {
+        trigger: "#project",
+      },
+    });
+  });
+
+  const handleMouseEnter = (index: number) => {
+    if (window.innerWidth < 768) return;
+
+    setCurrentIndex(index);
+
+    const el = overlayRefs.current[index];
+    if (!el) return;
+
+    gsap.killTweensOf(el);
+
+    gsap.fromTo(
+      el,
+      {
+        clipPath: "polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)",
+      },
+      {
+        clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+        duration: 0.15,
+        ease: "power2.out",
+      },
+    );
+
+    gsap.to(previewRef.current, {
+      opacity: 1,
+      scale: 1,
+      duration: 0.3,
+      ease: "power2.inOut",
+    });
+  };
+
+  const handleMouseLeave = () => {
+    if (window.innerWidth < 768) return;
+
+    setCurrentIndex(null);
+
+    const el = overlayRefs.current[currentIndex ?? 0];
+    if (!el) return;
+
+    gsap.killTweensOf(el);
+    gsap.to(el, {
+      clipPath: "polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)",
+      duration: 0.2,
+      ease: "power2.in",
+    });
+
+    gsap.to(previewRef.current, {
+      opacity: 0,
+      scale: 0.95,
+      duration: 0.3,
+      ease: "power2.inOut",
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (window.innerWidth < 768) return;
+    mouse.current.x = e.clientX + 24;
+    mouse.current.y = e.clientY + 24;
+
+    if (moveX.current && moveY.current) {
+      moveX.current(mouse.current.x);
+      moveY.current(mouse.current.y);
+    }
+  };
+  return (
+    <section id="work" className="flex flex-col min-h-screen">
+      <AnimatedHeader
+        title="Works"
+        subTitle="Logic meets Quality at every step"
+        textColor="text-black"
+        withScrollTrigger={true}
+        text={text}
+      />
+
+      <div
+        className="relative flex flex-col font-light"
+        onMouseMove={handleMouseMove}>
+        {projects.map((project, index) => (
+          <div
+            onMouseEnter={() => handleMouseEnter(index)}
+            onMouseLeave={() => handleMouseLeave()}
+            key={index}
+            id="project"
+            className="relative flex flex-col gap-1 py-5 cursor-pointer group md:gap-8">
+            <div
+              ref={(el) => {
+                if (el) {
+                  overlayRefs.current[index] = el;
+                }
+              }}
+              className="absolute inset-0 hidden md:block duration-200 bg-black -z-10 clip-path"
+            />
+            <div className="flex justify-between px-10 text-black transition-all duration-500 md:group-hover:px-12 md:group-hover:text-white">
+              <h2 className="lg:text-[32px] text-[26px] leading-none">
+                {project.name}
+              </h2>
+              <Icon icon="lucide:arrow-up-right" className="md:size-6 size-5" />
+            </div>
+            <div className="w-full h-0.5 bg-black/80" />
+
+            <div className="flex px-10 text-xs leading-loose uppercase transition-all duration-500 md:text-sm gap-x-5 md:group-hover:px-12">
+              {project.frameworks.map((framework, frameIndex) => (
+                <p
+                  className="text-black transition-colors duration-500 md:group-hover:text-white"
+                  key={frameIndex}>
+                  {framework.name}
+                </p>
+              ))}
+            </div>
+
+            <div className="relative flex items-center justify-center px-10 md:hidden h-[400px]">
+              <img
+                src={project.bgImage}
+                alt={project.name}
+                className="w-full h-full object-cover rounded-md brightness-50"
+              />
+              <img
+                src={project.image}
+                alt={project.name}
+                className="absolute bg-center px-14 rounded-xl"
+              />
+            </div>
+          </div>
+        ))}
+
+        <div
+          ref={previewRef}
+          className="fixed -top-2/6 left-0 z-50 overflow-hidden border-8 border-black pointer-events-none w-[960px] md:block hidden opacity-0">
+          {currentIndex !== null && (
+            <img
+              src={projects[currentIndex ?? 0].image}
+              alt="works"
+              className="object-cover w-full h-full"
+            />
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default WorksSection;
